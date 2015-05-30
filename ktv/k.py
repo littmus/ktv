@@ -2,13 +2,16 @@
 
 import requests
 from bs4 import BeautifulSoup as bs
+import lxml
 
 import parser
 
 HOST = 'http://www.koreapas.com/m/'
 LOGIN_URL = 'https://www.koreapas.com/bbs/login_check.php'
-BOARD_URL = HOST + 'mlist.php?id=%s'
-VIEW_URL = HOST + 'view.php?id=%s&no=%d'
+BOARD_URL = HOST + 'mlist.php'
+VIEW_URL = HOST + 'view.php'
+WRITE_URL = HOST + 'write.php'
+
 
 class Koreapas(object):
     
@@ -35,44 +38,61 @@ class Koreapas(object):
     @staticmethod
     def get_soup(html):
         html = parser.strip_junk_tags(html)
-        return bs(html)
+        return bs(html, 'html5lib')
 
     def main(self):
-        r = self.get(BOARD_URL % 'tiger')
+        url = BOARD_URL
+        params = {'id':'tiger'}
+        r = self.get(BOARD_URL, params=params)
         soup = self.get_soup(r.content)
-        selector = soup.find('select')
+        options = soup.find('select').find_all('option')
 
         boards = []
-        for option in selector.find_all('option')[7:]:
+        for option in options[7:]:
             boards.append((option.text, option['value'].split('=')[1]))
 
         return boards
 
-    def board(self, board_id):
-        url = BOARD_URL % board_id
-        r = self.get(url)
+    def board(self, board_id, page=1):
+        url = BOARD_URL
+        params = {'id': board_id, 'page': page}
+        r = self.get(url, params=params)
         soup = self.get_soup(r.content)
-        
-        articles = filter(lambda l:l.get('onclick') is not None, soup.find_all('table'))
-        for article in articles[1:]:
+        tables = soup.find_all('table')[1:]
+        articles = filter(lambda l:l.get('bgcolor')=='#ffffff', tables)
+        for article in articles:
             link = article.get('onclick')
-            print link
+            print link.split('=', 1)[1][1:-1]
             rows = article.find_all('tr')
             reply_count, title = [td.text.strip() for td in rows[0].find_all('td')]
+            reply_count = 0 if reply_count == '' else reply_count
             print reply_count, title
 
             nick, timeago = [td.text.strip() for td in rows[1].find_all('td')]
             print nick, timeago
 
     def view(self, board_id, no):
-        url = VIEW_URL % (board_id, no)
-        return self.get(url)
+        url = VIEW_URL
+        params = {'id':board_id, 'no':no}
+        return self.get(url, params=params)
+
+    def write(self, board_id, mode='write'):
+        url = WRITE_URL
+        params = {'id': board_id, 'mode': mode}
+        headers = {
+            'Referer': BOARD_URL + '?id=%s' % board_id
+        }
+        return self.get(url, params=params, headers=headers)
+
+    def comment(self):
+        pass
 
 if __name__ == '__main__':
     k = Koreapas()
-    k.login('ehddnjsdld', 'ted705')
-    print k.main()
-    k.board('tiger')
-    #r = k.view('talk2', 3446655)
+    k.login('tedted', 'ted705')
+    #k.main()
+    #k.board('tiger')
+    k.board('talk2')
+    #print k.write('talk2').content.decode('euc-kr')
     #res = r.content
     #print res.decode('euc-kr')

@@ -5,7 +5,7 @@ import curses
 from curses import textpad, ascii
 from contextlib import contextmanager
 
-from .docs import HELP
+#from .docs import HELP
 from .helpers import strip_textpad
 from .exceptions import EscapeInterrupt
 

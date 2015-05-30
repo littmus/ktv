@@ -53,7 +53,6 @@ def main():
 
     print dir(args)
     
-    try:
 
 
 main()
