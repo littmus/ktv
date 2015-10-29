@@ -117,7 +117,6 @@ class Koreapas(object):
 
 if __name__ == '__main__':
     k = Koreapas()
-    k.login('tedted', 'ted705')
     #k.main()
     #k.board('tiger')
     #k.board('talk2')
